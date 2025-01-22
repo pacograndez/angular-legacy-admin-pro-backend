@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start:dev": "nodemon index.js"
   },
   "repository": {
     "type": "git",
@@ -17,5 +17,10 @@
     "url": "https://github.com/pacograndez/angular-legacy-admin-pro-backend/issues"
   },
   "homepage": "https://github.com/pacograndez/angular-legacy-admin-pro-backend#readme",
-  "dependencies": {}
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.9.21"
+  }
 }
