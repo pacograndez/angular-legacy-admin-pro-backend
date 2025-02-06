@@ -1,57 +1,46 @@
 const { response } = require('express');
 const bcrypt = require('bcryptjs');
-const User = require('../models/user');
+const Hospital = require('../models/hospital');
 const { generateToken } = require('../helpers/jwt');
 
-const getUsers = async (req, res) => {
-    const skip = Number(req.query.skip) || 0;
+const getHospitals = async (req, res) => {
 
-    // const users = await User.find({}, 'name email role google').skip(skip).limit(5);
-    // const total = await User.count();
-
-    const [users, total] = await Promise.all([
-        User.find({}, 'name email role google img').skip(skip).limit(5),
-        User.countDocuments()
-    ])
+    const hospitals = await Hospital.find().populate('user', 'name img');
 
     res.json({
         ok: true,
-        users,
-        total
+        hospitals,
+        uid: req.uid
     })
 }
 
-const createUser = async (req, res = response) => {
+const createHospital = async (req, res = response) => {
 
-    const { name, email, password } = req.body;
+    const { name } = req.body;
+    const userId = req.uid;
 
     try {
 
-        const emailExists = await User.findOne({ email });
+        const hospitalExists = await Hospital.findOne({ name });
 
-        if (emailExists) {
+        if (hospitalExists) {
             return res.status(400).json({
                 ok: false,
-                msg: 'El correo ya está registrado'
+                msg: 'El hospital ya está registrado'
             })
         }
 
-        const user = new User(req.body);
-
-        // Encrypt
-        const salt = bcrypt.genSaltSync();
-        user.password = bcrypt.hashSync(password, salt);
+        const hospital = new Hospital({
+            user: userId,
+            ...req.body
+        });
 
         // Save user
-        await user.save();
-
-        //Generate JWT
-        const token = await generateToken(user.id);
+        const hospitalDB = await hospital.save();
 
         res.json({
             ok: true,
-            user,
-            token
+            hospital: hospitalDB
         })
 
     } catch (error) {
@@ -63,7 +52,7 @@ const createUser = async (req, res = response) => {
     }
 }
 
-const updateUser = async (req, res = response) => {
+const updateHospital = async (req, res = response) => {
 
     // TODO: validar token y si es el usuario correcto
 
@@ -114,7 +103,7 @@ const updateUser = async (req, res = response) => {
     }
 }
 
-const deleteUser = async (req, res) => {
+const deleteHospital = async (req, res) => {
 
     const uid = req.params.id;
     
@@ -145,4 +134,4 @@ const deleteUser = async (req, res) => {
     }
 }
 
-module.exports = { getUsers, createUser, updateUser, deleteUser }
+module.exports = { getHospitals, createHospital, updateHospital, deleteHospital }

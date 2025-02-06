@@ -1,57 +1,47 @@
 const { response } = require('express');
 const bcrypt = require('bcryptjs');
-const User = require('../models/user');
+const Doctor = require('../models/doctor');
 const { generateToken } = require('../helpers/jwt');
+const hospital = require('../models/hospital');
 
-const getUsers = async (req, res) => {
-    const skip = Number(req.query.skip) || 0;
+const getDoctors = async (req, res) => {
 
-    // const users = await User.find({}, 'name email role google').skip(skip).limit(5);
-    // const total = await User.count();
-
-    const [users, total] = await Promise.all([
-        User.find({}, 'name email role google img').skip(skip).limit(5),
-        User.countDocuments()
-    ])
+    const doctors = await Doctor.find().populate('user', 'name').populate('hospital', 'name');
 
     res.json({
         ok: true,
-        users,
-        total
+        doctors,
+        uid: req.uid
     })
 }
 
-const createUser = async (req, res = response) => {
+const createDoctor = async (req, res = response) => {
 
-    const { name, email, password } = req.body;
+    const { name } = req.body;
+    const userId = req.uid;
 
     try {
 
-        const emailExists = await User.findOne({ email });
+        const doctorExists = await Doctor.findOne({ name });
 
-        if (emailExists) {
+        if (doctorExists) {
             return res.status(400).json({
                 ok: false,
-                msg: 'El correo ya está registrado'
+                msg: 'El Doctor ya está registrado'
             })
         }
 
-        const user = new User(req.body);
-
-        // Encrypt
-        const salt = bcrypt.genSaltSync();
-        user.password = bcrypt.hashSync(password, salt);
+        const doctor = new Doctor({
+            user: userId,
+            ...req.body
+        });
 
         // Save user
-        await user.save();
-
-        //Generate JWT
-        const token = await generateToken(user.id);
+        const doctorDB = await doctor.save();
 
         res.json({
             ok: true,
-            user,
-            token
+            doctor: doctorDB
         })
 
     } catch (error) {
@@ -63,7 +53,7 @@ const createUser = async (req, res = response) => {
     }
 }
 
-const updateUser = async (req, res = response) => {
+const updateDoctor = async (req, res = response) => {
 
     // TODO: validar token y si es el usuario correcto
 
@@ -114,7 +104,7 @@ const updateUser = async (req, res = response) => {
     }
 }
 
-const deleteUser = async (req, res) => {
+const deleteDoctor = async (req, res) => {
 
     const uid = req.params.id;
     
@@ -145,4 +135,4 @@ const deleteUser = async (req, res) => {
     }
 }
 
-module.exports = { getUsers, createUser, updateUser, deleteUser }
+module.exports = { getDoctors, createDoctor, updateDoctor, deleteDoctor }
